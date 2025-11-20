@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String                @id @default(cuid())
+  email               String                @unique
+  password            String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  subscriptionTier    String                @default("FREE")
+  generationsThisMonth Int                  @default(0)
+  subscriptionStartDate DateTime            @default(now())
+  masterResume        MasterResume?
+  jobDescriptions     JobDescription[]
+  resumeVersions      ResumeVersion[]
+  coverLetterVersions CoverLetterVersion[]
+}
+
+model MasterResume {
+  id                String             @id @default(cuid())
+  userId            String             @unique
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personalInfo      Json
+  workExperiences   WorkExperience[]
+  educations        Education[]
+  certifications    Certification[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model WorkExperience {
+  id                  String       @id @default(cuid())
+  masterResumeId      String
+  masterResume        MasterResume @relation(fields: [masterResumeId], references: [id], onDelete: Cascade)
+  jobTitle            String
+  company             String
+  location            String
+  startDate           DateTime
+  endDate             DateTime?
+  description         String
+  tags                WorkExperienceTag[]
+}
+
+model WorkExperienceTag {
+  id               String         @id @default(cuid())
+  workExperienceId String
+  workExperience   WorkExperience @relation(fields: [workExperienceId], references: [id], onDelete: Cascade)
+  tag              String
+  type             String // "FUNCTIONAL_ROLE" or "INDUSTRY_DOMAIN"
+}
+
+model Education {
+  id             String       @id @default(cuid())
+  masterResumeId String
+  masterResume   MasterResume @relation(fields: [masterResumeId], references: [id], onDelete: Cascade)
+  institution    String
+  degree         String
+  fieldOfStudy   String
+  startDate      DateTime
+  endDate        DateTime
+}
+
+model Certification {
+  id                   String       @id @default(cuid())
+  masterResumeId       String
+  masterResume         MasterResume @relation(fields: [masterResumeId], references: [id], onDelete: Cascade)
+  name                 String
+  issuingOrganization  String
+  issueDate            DateTime
+  expirationDate       DateTime?
+}
+
+model JobDescription {
+  id                        String                 @id @default(cuid())
+  userId                    String
+  user                      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originalText              String
+  extractedFunctionalRole   String
+  extractedIndustryDomain   String
+  userEditedRole            String?
+  userEditedDomain          String?
+  companyName               String?
+  jobTitle                  String?
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+  resumeVersions            ResumeVersion[]
+  coverLetterVersions       CoverLetterVersion[]
+}
+
+model ResumeVersion {
+  id               String         @id @default(cuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobDescriptionId String
+  jobDescription   JobDescription @relation(fields: [jobDescriptionId], references: [id], onDelete: Cascade)
+  versionName      String
+  tagline          String
+  summary          String
+  content          Json
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model CoverLetterVersion {
+  id               String         @id @default(cuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobDescriptionId String
+  jobDescription   JobDescription @relation(fields: [jobDescriptionId], references: [id], onDelete: Cascade)
+  versionName      String
+  content          String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}

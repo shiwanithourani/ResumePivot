@@ -1,0 +1,10 @@
+node_modules
+# Keep environment variables out of version control
+.env
+backend/prisma/dev.db
+/generated/prisma
+# Ignore Prisma files that shouldn't be tracked
+backend/prisma/dev.db
+
+# Ignore uploaded files
+backend/uploads/
