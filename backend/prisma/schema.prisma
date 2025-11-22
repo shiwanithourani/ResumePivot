@@ -1,58 +1,54 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
-  relationMode = "prisma"
 }
 
 model User {
-  id                  String                @id @default(cuid())
-  email               String                @unique
-  password            String
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  subscriptionTier    String                @default("FREE")
+  id                   String               @id @default(auto()) @map("_id") @db.ObjectId
+  email                String               @unique
+  password             String
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  subscriptionTier     String               @default("FREE")
   generationsThisMonth Int                  @default(0)
   subscriptionStartDate DateTime            @default(now())
-  masterResume        MasterResume?
-  jobDescriptions     JobDescription[]
-  resumeVersions      ResumeVersion[]
-  coverLetterVersions CoverLetterVersion[]
+  masterResume         MasterResume?
+  jobDescriptions      JobDescription[]
+  resumeVersions       ResumeVersion[]
+  coverLetterVersions  CoverLetterVersion[]
 }
 
 model MasterResume {
-  id                String             @id @default(cuid())
-  userId            String             @unique
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  personalInfo      Json
-  workExperiences   WorkExperience[]
-  educations        Education[]
-  certifications    Certification[]
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String           @unique
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personalInfo    Json
+  workExperiences WorkExperience[]
+  educations      Education[]
+  certifications  Certification[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model WorkExperience {
-  id                  String       @id @default(cuid())
-  masterResumeId      String
-  masterResume        MasterResume @relation(fields: [masterResumeId], references: [id], onDelete: Cascade)
-  jobTitle            String
-  company             String
-  location            String
-  startDate           DateTime
-  endDate             DateTime?
-  description         String
-  tags                WorkExperienceTag[]
+  id             String             @id @default(auto()) @map("_id") @db.ObjectId
+  masterResumeId String
+  masterResume   MasterResume       @relation(fields: [masterResumeId], references: [id], onDelete: Cascade)
+  jobTitle       String
+  company        String
+  location       String
+  startDate      DateTime
+  endDate        DateTime?
+  description    String
+  tags           WorkExperienceTag[]
 }
 
 model WorkExperienceTag {
-  id               String         @id @default(cuid())
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
   workExperienceId String
   workExperience   WorkExperience @relation(fields: [workExperienceId], references: [id], onDelete: Cascade)
   tag              String
@@ -60,7 +56,7 @@ model WorkExperienceTag {
 }
 
 model Education {
-  id             String       @id @default(cuid())
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
   masterResumeId String
   masterResume   MasterResume @relation(fields: [masterResumeId], references: [id], onDelete: Cascade)
   institution    String
@@ -71,34 +67,34 @@ model Education {
 }
 
 model Certification {
-  id                   String       @id @default(cuid())
-  masterResumeId       String
-  masterResume         MasterResume @relation(fields: [masterResumeId], references: [id], onDelete: Cascade)
-  name                 String
-  issuingOrganization  String
-  issueDate            DateTime
-  expirationDate       DateTime?
+  id                  String       @id @default(auto()) @map("_id") @db.ObjectId
+  masterResumeId      String
+  masterResume        MasterResume @relation(fields: [masterResumeId], references: [id], onDelete: Cascade)
+  name                String
+  issuingOrganization String
+  issueDate           DateTime
+  expirationDate      DateTime?
 }
 
 model JobDescription {
-  id                        String                 @id @default(cuid())
-  userId                    String
-  user                      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  originalText              String
-  extractedFunctionalRole   String
-  extractedIndustryDomain   String
-  userEditedRole            String?
-  userEditedDomain          String?
-  companyName               String?
-  jobTitle                  String?
-  createdAt                 DateTime               @default(now())
-  updatedAt                 DateTime               @updatedAt
-  resumeVersions            ResumeVersion[]
-  coverLetterVersions       CoverLetterVersion[]
+  id                       String                 @id @default(auto()) @map("_id") @db.ObjectId
+  userId                   String
+  user                     User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originalText             String
+  extractedFunctionalRole  String
+  extractedIndustryDomain  String
+  userEditedRole           String?
+  userEditedDomain         String?
+  companyName              String?
+  jobTitle                 String?
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  resumeVersions           ResumeVersion[]
+  coverLetterVersions      CoverLetterVersion[]
 }
 
 model ResumeVersion {
-  id               String         @id @default(cuid())
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
   userId           String
   user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   jobDescriptionId String
@@ -112,7 +108,7 @@ model ResumeVersion {
 }
 
 model CoverLetterVersion {
-  id               String         @id @default(cuid())
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
   userId           String
   user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   jobDescriptionId String

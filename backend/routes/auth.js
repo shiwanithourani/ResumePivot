@@ -3,32 +3,36 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
 const prisma = new PrismaClient();
 
-const JWT_SECRET = "12345";
+
+//router.use(authMiddleware);
 
 // POST /api/auth/signup - User registration
 router.post('/signup', async (req, res) => {
-  const { email, password } = req.body; // ✅ FIX: Added this line!
+  const { email, password } = req.body;
 
-  // Validation
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
 
   try {
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(409).json({ error: 'A user with this email already exists.' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: {
         email,
-        password: hashedPassword
-      }
+        password: hashedPassword,
+      },
     });
+
     res.status(201).json({ message: 'User created successfully.', userId: user.id });
   } catch (error) {
-    if (error.code === 'P2002') {
-      return res.status(409).json({ error: 'A user with this email already exists.' });
-    }
     console.error(error);
     res.status(500).json({ error: 'An error occurred while creating the user.' });
   }
@@ -38,36 +42,32 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  // Validation
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+    let user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      // If user doesn't exist, create a new one
       const hashedPassword = await bcrypt.hash(password, 10);
-      const newUser = await prisma.user.create({
+      user = await prisma.user.create({
         data: {
           email,
           password: hashedPassword,
+          subscriptionTier: 'FREE',
+          generationsThisMonth: 0,
+          subscriptionStartDate: new Date(),
         },
       });
-      const token = jwt.sign({ userId: newUser.id }, JWT_SECRET, { expiresIn: '24h' });
-      return res.json({ token });
+    } else {
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: 'Invalid credentials.' });
+      }
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid credentials.' });
-    }
-
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '24h' }); // Extended to 24h
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
     res.json({ token });
   } catch (error) {

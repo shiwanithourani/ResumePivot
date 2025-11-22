@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config({ path: './.env' });
+require('dotenv').config();
+const authMiddleware = require('./middleware/auth.js'); // adjust path if needed
+console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -26,7 +28,7 @@ app.use((req, res, next) => {
   next();
 });
 
-const authMiddleware = require('./middleware/auth');
+
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -47,7 +49,11 @@ app.get('/', (req, res) => {
 
 // ✅ FIX: Global error handler
 app.use((err, req, res, next) => {
-  console.error('Global error handler:', err);
+  console.error('--- UNHANDLED ERROR ---');
+  console.error(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  console.error('Request Body:', JSON.stringify(req.body, null, 2));
+  console.error('Error Stack:', err.stack);
+  console.error('--- END UNHANDLED ERROR ---');
   res.status(500).json({ error: 'Internal server error', details: err.message });
 });
 

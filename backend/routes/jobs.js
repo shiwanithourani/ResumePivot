@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
+const authMiddleware = require('../middleware/auth');
+
 const prisma = new PrismaClient();
+
+router.use(authMiddleware);
 
 // ✅ Enhanced extraction with better patterns
 function extractJobDetails(text) {
@@ -47,15 +51,15 @@ function extractJobDetails(text) {
     ];
 
     for (const regex of titlePatterns) {
-        const match = text.match(regex);
-        if (match && match[1]) {
-            title = match[1].trim();
-            break;
-        }
+    const match = text.match(regex);
+    if (match && match[1]) {          // <-- use the first captured group
+        title = match[1].trim();      // <-- now trim() works
+        break;
     }
-    
+}
+
     if (title === "Job Title Not Found") {
-        const firstLine = text.split('\n')[0]?.trim();
+        const firstLine = text.split('\n')?.trim();
         if (firstLine && firstLine.length < 100) {
             title = firstLine;
         } else {
@@ -72,12 +76,13 @@ function extractJobDetails(text) {
     ];
 
     for (const regex of companyPatterns) {
-        const match = text.match(regex);
-        if (match && match[1]) {
-            companyName = match[1].trim();
-            break;
-        }
+    const match = text.match(regex);
+    if (match && match[1]) {
+        companyName = match[1].trim();
+        break;
     }
+}
+
 
     return { role, domain, title, companyName };
 }
@@ -104,8 +109,7 @@ router.post('/', async (req, res) => {
 
     try {
         const { role, domain, title, companyName } = extractJobDetails(originalText);
-
-        const jobDescription = await prisma.jobDescription.create({
+        const newJobDescription = await prisma.jobDescription.create({
             data: {
                 userId,
                 originalText,
@@ -115,7 +119,7 @@ router.post('/', async (req, res) => {
                 companyName: companyName,
             },
         });
-        res.json(jobDescription);
+        res.json(newJobDescription);
     } catch (error) {
         console.error("Error creating job description:", error);
         res.status(500).json({ error: 'An error occurred while creating the job description.' });
@@ -128,7 +132,7 @@ router.get('/', async (req, res) => {
     try {
         const jobDescriptions = await prisma.jobDescription.findMany({
             where: { userId },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
         });
         res.json(jobDescriptions);
     } catch (error) {
@@ -143,7 +147,7 @@ router.put('/:id', async (req, res) => {
     const { originalText, extractedFunctionalRole, extractedIndustryDomain, companyName, jobTitle, userEditedRole, userEditedDomain } = req.body;
 
     try {
-        const jobDescription = await prisma.jobDescription.update({
+        const updatedJobDescription = await prisma.jobDescription.update({
             where: { id },
             data: {
                 originalText,
@@ -153,9 +157,9 @@ router.put('/:id', async (req, res) => {
                 jobTitle,
                 userEditedRole,
                 userEditedDomain,
-            }
+            },
         });
-        res.json(jobDescription);
+        res.json(updatedJobDescription);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while updating the job description.' });
