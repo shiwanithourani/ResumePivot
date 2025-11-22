@@ -7,6 +7,8 @@ const path = require('path');
 const fs = require('fs').promises;
 const fssync = require('fs');
 const pdfParse = require('pdf-parse');
+//const parsePdf = pdfParse.default || pdfParse;
+
 const mammoth = require('mammoth');
 
 const prisma = new PrismaClient();
@@ -492,11 +494,11 @@ router.post("/upload", authMiddleware, upload.single("resume"), async (req, res)
     const filePath = req.file.path;
     let text = '';
 
-    try {
-        if (ext === '.pdf') {
-            const buffer = await fs.readFile(filePath);
-            text = (await pdfParse(buffer)).text || '';
-        } else if (ext === '.docx' || ext === '.doc') {
+    try {if (ext === '.pdf') {
+    const buffer = await fs.readFile(filePath);
+    const data = await pdfParse(buffer);
+    text = data.text || '';
+    } else if (ext === '.docx' || ext === '.doc') {
             const buffer = await fs.readFile(filePath);
             const extracted = await mammoth.extractRawText({ buffer });
             text = extracted && extracted.value ? extracted.value : '';
